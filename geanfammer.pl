@@ -4,19 +4,54 @@
 # Title     : geanfammer.pl
 # Usage     : geanfammer.pl DATABASE(or GENOME)
 #
-# Function  : creates a domain level clustering file from a given FASTA format sequence
+# Function  : Creates a domain level clustering file from a given FASTA format
+#              sequence
 #             DB. It has been used for complete genome sequence analysis.
 #
-# Example   : geanfammer.pl E_cli_gnome.fa                  # simplest form of execution
-#             geanfammer.pl E_cli_gnome.fa a=ssearch        # use SSEARCH instead of FASTA
-#             geanfammer.pl E_cli_gnome.fa o                # for overwriting files in running
-#                                                           # when you want a fresh run over old
-#             geanfammer.pl E_cli_gnome.fa c                # For keeping SSO files (fasta output)
-#             geanfammer.pl E_cli_gnome.fa k=2              # changing default k tuple for FASTA to 2
-#             geanfammer.pl E_cli_gnome.fa E=0.001          # set the E value for initial single linkage
-#                                                           #  clustering
-#             geanfammer.pl E_cli_gnome.fa e=0.001          # set the E value for domain level linkage
-#             geanfammer.pl E_cli_gnome.fa e=0.001 E=0.01   # set the 2 E values
+#                   ------------ USAGE INFORMATION -------------------
+#             The parameters you put are important for the meaningful protein family
+#               maker.
+#             The most important one is the E and e options.
+#             Large E is for setting the threshold for the single linkage clustering.
+#             This means, any sequence hit BELOW the threshold will be linked.
+#             For example, if Seq1 matched with Seq2 with E value of FASTA search:
+#              0.001, and you set the threshold 0.1, then YOU ordered the geanfammer to
+#              regard them a family.
+#             The second small e option is for the dividing a complex and wrong cluster
+#              into correct more correct duplication modules. This is necessary as a
+#              lot of multidomain proteins can be clustered together WRONGLY by single
+#              linkage.
+#             At this stage, the e value is irrelevant to E value and you can set
+#              a higher or lower one. Or you can set the same as E.
+#
+#             Rough guide from our experience for E and e values:
+#              We know that with 1000 sequence database, 0.01 produces around 1% error
+#              in grouping sequences according to the evalue.
+#              With 180,000, 0.081 gave us less than 1% error.
+#             Evalue of FASTA and SSEARCH is DEPENDENT on DB size, so you need to play
+#              a little bit to know the best E value you like.
+#             The best approach is :
+#               1) You run geanfammer.pl with any of your target DB with certain E
+#                  value you like
+#               2) Check sequence families which are clustered in the final resultant file
+#                  xxxx.gclu and decide if the E value is low or high. Lower evalues will
+#                  make sure you do not make wrong clusters while high evalue will include
+#                  more probable sequence family members.
+#               3) Put all the xxxx.msp files in subdirectory(s) created by geanfammer
+#                  and run divclus.pl (which is accompanied in the package) with
+#                  different Evalues. Divclus will not run any search algorithm etc, so
+#                  it can be done fairly quickly.
+#
+# Example   : geanfammer.pl E_cli_gnome.fa                # simplest form of execution
+#             geanfammer.pl E_cli_gnome.fa a=ssearch      # use SSEARCH instead of FASTA
+#             geanfammer.pl E_cli_gnome.fa o              # for overwriting files in running
+#                                                         # when you want a fresh run over old
+#             geanfammer.pl E_cli_gnome.fa c              # For keeping SSO files (fasta output)
+#             geanfammer.pl E_cli_gnome.fa k=2            # changing default k tuple for FASTA to 2
+#             geanfammer.pl E_cli_gnome.fa E=0.001        # set the E value for initial single linkage
+#                                                         #  clustering
+#             geanfammer.pl E_cli_gnome.fa e=0.001        # set the E value for domain level linkage
+#             geanfammer.pl E_cli_gnome.fa e=0.001 E=0.01 # set the 2 E values
 #
 # Keywords  : genome_analysis_and_protein_family_maker, genome_ana_protein_fam_maker
 # Options   :
@@ -61,8 +96,8 @@
     $sub_dir_size=2;
     $machine_readable='M';
     $make_msp_in_sub_dir_opt='m';
-    $Evalue_cut_single_link=50;
-    $Evalue_cut_divclus    =50;
+    $Evalue_cut_single_link=10;
+    $Evalue_cut_divclus    =10;
     $make_subdir_gzipped='d';
     $make_subdir_out='D';
 
@@ -76,8 +111,12 @@
 # Running the actual big sub
 #______________________________
 
-    print "\n# $0 : \@your_genome_or_db_to_analyse_file : @your_genome_or_db_to_analyse_file\n";
-
+    print "\n\n\n# $0 : \@your_genome_or_db_to_analyse_file -> @your_genome_or_db_to_analyse_file\n";
+    if(@your_genome_or_db_to_analyse_file < 1){
+         print "\n# $0: failed to find input file! Did you put FASTA format DB file as input?\n\n\n\n";
+         print chr(7);
+         exit;
+    }
     @final_clu_files=@{&geanfammer(\@your_genome_or_db_to_analyse_file,
                           $verbose_opt,
                           "d=$sub_dir_size",
@@ -208,10 +247,10 @@ sub geanfammer{
         # following is a very rough guide for a reasonable E value thresh for different DB size
         #______________________________________________________________________________________________
         if(@msp_files_main > 180,000){     $Evalue_cut_single_link=$Evalue_cut_divclus=0.08;
-        }elsif(@msp_files_main > 50000){   $Evalue_cut_single_link=$Evalue_cut_divclus=0.2;
-        }elsif(@msp_files_main > 10000){   $Evalue_cut_single_link=$Evalue_cut_divclus=0.5;
-        }elsif(@msp_files_main > 1000){    $Evalue_cut_single_link=$Evalue_cut_divclus=1;
-        }elsif(@msp_files_main > 100){     $Evalue_cut_single_link=$Evalue_cut_divclus=2;
+        }elsif(@msp_files_main > 50000){   $Evalue_cut_single_link=$Evalue_cut_divclus=0.01;
+        }elsif(@msp_files_main > 10000){   $Evalue_cut_single_link=$Evalue_cut_divclus=0.2;
+        }elsif(@msp_files_main > 1000){    $Evalue_cut_single_link=$Evalue_cut_divclus=0.5;
+        }elsif(@msp_files_main > 100){     $Evalue_cut_single_link=$Evalue_cut_divclus=1;
         }elsif(@msp_files_main > 50){      $Evalue_cut_single_link=$Evalue_cut_divclus=6;
         }elsif(@msp_files_main > 20 ){     $Evalue_cut_single_link=$Evalue_cut_divclus=11;
         }
@@ -2476,7 +2515,7 @@ sub fetch_sequence_from_db{
 	#  Fetching sequences from DATABASE
 	#_______________________________________________________________
 	print "\n# fetch_sequence_from_db: Fetching seqs from @DATABASE with  @INDEX_FILE ";
-	my @Keys= keys %seq_with_index;        ## <<< NOTE it is @Keys, not @keys
+	@Keys= keys %seq_with_index;        ## <<< NOTE it is @Keys, not @keys
 	print "\n# (3) fetch_sequence_from_db: No. of seq indexed is:", scalar(@Keys);
 
 	for($f=0; $f< @DATABASE; $f++){
@@ -3137,10 +3176,10 @@ sub reverse_sequences{
 # Example   :
 # Keywords  : read_sso_lines_in_array
 # Options   : a c r r2 n
-# Version   : 1.0
+# Version   : 1.1
 #----------------------------------------------------------------------------
 sub read_sso_lines{
-	  my ($i, $upper_expect_limit, $lower_expect_limit)=(50,0); ##<<--- DEFAULT
+	  my ($upper_expect_limit, $lower_expect_limit)=(50,0); ##<<--- DEFAULT
 	  my (@out_refs, $parseable, @SSO, $create_sso, $i, $j, $k, $attach_range_in_names);
 
 	  for($i=0; $i< @_; $i++){
@@ -4500,7 +4539,7 @@ sub remove_similar_seqlets{
 # Example   :
 # Keywords  : clu_2_sso_2_msp, cluster_to_msp, cluster_to_sso_to_msp
 # Options   :
-# Version   : 1.3
+# Version   : 1.4
 #--------------------------------------------------------------------------------
 sub clu_to_sso_to_msp{
      my($i, $j, $k, $s, $u, $p, $m, $n, @possible_extensions, @list,
@@ -4517,7 +4556,8 @@ sub clu_to_sso_to_msp{
              and I am processing it with clu_to_sso_to_msp\n" if defined $clu;
      my %clus=%{&open_clu_files(\$clu)};
      my @keys= keys %clus;
-     @keys=@{&sort_by_cluster_size(\@keys)};
+     my $num_of_cluster=@keys=@{&sort_by_cluster_size(\@keys)};
+     print "\n\n# $0: clu_to_sso_to_msp: No. of cluster=$num_of_cluster after open_clu_files \n\n";
      &show_array(\@keys) if $verbose;
      &show_hash(\%clus) if $verbose;
      @possible_extensions=('sso', 'msso', 'msso.gz','fsso', 'ssso', 'fso', 'out', 'prot.sso', 'prot.ts');
@@ -4531,15 +4571,19 @@ sub clu_to_sso_to_msp{
         }else{
             $big_out_msp=$single_file_name;
         }
-        push(@written_msp_files, $big_out_msp); ## This is teh output of this sub
+        push(@written_msp_files, $big_out_msp); ## This is the output of this sub
+
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         #  If $clus_name.msp is already there, skip
         #_____________________________________________
         if( (-s $big_out_msp) > 100  and !$over_write ){
             print "\n# clu_to_sso_to_msp : $big_out_msp MSP file already exists, skipping\n";
-            print "#    Use  \$over_write option \'o\' to overwrite it\n";  next ;
+            print "#    Use  \$over_write option \'o\' to start all over again or \n";
+            print "#    delete clustering files like XX-XX_cluster.clu to go on\n";
+            next ;
         }
-        @list=split(/ +/, $clus{$keys[$i]}); # @list has (HIU001, HI002, HI333, MJ111, etc)
+        $num_of_seq_member=@list=split(/ +/, $clus{$keys[$i]}); # @list has (HIU001, HI002, HI333, MJ111, etc)
+        print "\n\n# $0: clu_to_sso_to_msp: No. of seq member=$num_of_seq_member after split \n\n";
 
         FOR0: for($j=0; $j < @list; $j++){
            my($sub_dir_head, $file_name_low, $file_name_up, $file_name_prot_low, @sub_dir_heads,
@@ -4559,7 +4603,7 @@ sub clu_to_sso_to_msp{
            #  Checking all the possible subdirectories to crop all the sso files
            #_______________________________________________________________________________
            FOR1: for($p=0; $p < @sub_dir_heads; $p++){
-               $sub_dir_head=$sub_dir_heads[$p];
+               $subd=$sub_dir_heads[$p];
 
                FOR2 : for($e=0; $e < @possible_extensions; $e++){
                     $ext=$possible_extensions[$e];
@@ -4567,16 +4611,16 @@ sub clu_to_sso_to_msp{
                     #  This makes all the possible lower upper case names
                     #______________________________________________________
                     for($u=0; $u<@U_L_case; $u++){
-                        if($U_L_case=~/U/){  $each_seq_name="\U$each_seq_name";
+                        if($U_L_case[$u]=~/U/){  $each_seq_name="\U$each_seq_name";
                         }else{               $each_seq_name="\L$each_seq_name"; }
                         if(-s "$each_seq_name\.$ext"){  push(@final_files, "$each_seq_name\.$ext" ) ; next FOR0 }
                         elsif(-s "$each_seq_name\.$ext\.gz"){ push(@final_files, "$each_seq_name\.$ext\.gz" ) ; next FOR0 }
                         else{
-                            for($s=0; $s < @sub_dir_heads; $s++){
-                                 $subd=$sub_dir_heads[$s];
-                                 $file_wanted="\.\/$subd\/$each_seq_name\.$ext";
-                                 if(-s $file_wanted){ push( @final_files, $file_wanted); next FOR0 }
-                                 elsif(-s "$file_wanted\.gz"){push( @final_files, "$file_wanted\.gz"); next FOR0 }
+                            $file_wanted="\.\/$subd\/$each_seq_name\.$ext";
+                            if(-s $file_wanted){ push( @final_files, $file_wanted); next FOR0 }
+                            elsif(-s "$file_wanted\.gz"){
+                               push( @final_files, "$file_wanted\.gz");
+                               next FOR0
                             }
                         }
                     }

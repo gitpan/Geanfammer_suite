@@ -7,9 +7,9 @@
 
 Version.
 
-   "geanfammer_suite_1.0.tar.gz"
+   "geanfammer_suite_1.0.1.tar.gz"
 
-   1.0. was put into the ftp directory of LMB on 1st Oct. 1997.
+   1.0.1. was put into the ftp directory of LMB on 14th Oct. 1997.
    (ftp://ftp.mrc-lmb.cam.ac.uk/genomes/Software/Geanfammer)
    Not yet 100% public.
 
@@ -26,7 +26,7 @@ Introduction.
 
    (Usage example)
 
-           "geanfammer.pl Your_Genome.fa"
+           "geanfammer.pl Your_Genome.fa E=10 e=10"
 
    Above will produce "Your_Genome.gclu" or "sorted_cluster_file.gclu".
    The extension of gclu means 'good clustering'. The word good does not mean
@@ -56,8 +56,11 @@ Test Run
    final domain clustering results should be identical. The one single sequence
    fam_1_1 will disappear as we do not regard orphan sequence as any family member.
 
-   To run it, type:   " geanfammer.pl geanfammer_test_FASTA_DB.fa "
+   To run it, type:   " geanfammer.pl geanfammer_test_FASTA_DB.fa E=30 e=30"
 
+   The 2 evalues are absurdly high for the test db as test db has only
+   around 30 sequences. Evalues are dependent on the DB size. If you have around
+   1000 sequences in your DB, you can perhaps choose 0.05 or 0.01 for clustering.
    It will produce tons of files, so it is better to make a subdir first.
    The single linkage clustering file is called xxxx.sclu  while the domain level
    clustering is called as xxxx.gclu.
